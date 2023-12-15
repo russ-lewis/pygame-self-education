@@ -1,3 +1,5 @@
+#! /usr/bin/python3
+
 import numpy as np
 import random
 
@@ -8,6 +10,12 @@ class Character:
         self.pos = np.array(pos, float)
         self.prevPos = np.array(pos, float)
         self.acceleration = np.array((0, 0), float)
+
+        speed = 1
+        self.pos += (
+            random.random() * speed * 2 - speed,
+            random.random() * speed * 2 - speed
+        )
 
         self.color = [random.randint(0, 100), random.randint(0, 255), random.randint(155, 255)]
         random.shuffle(self.color)
@@ -20,9 +28,10 @@ class Character:
         vel = vel + self.acceleration
 
         vm = np.linalg.norm(vel)
-        # if vm > 5:
-        #     vel /= vm
-        vel /= vm / 2
+        if vm > 0:
+            # if vm > 5:
+            #     vel /= vm
+            vel /= vm / 2
 
         self.prevPos = self.pos * 1
         self.pos += vel
@@ -93,13 +102,6 @@ for i in range(25):
     c = Character((random.random()*1500, random.random()*750))
     characters.append(c)
 
-    speed = 1
-    c.pos += (
-        random.random() * speed * 2 - speed,
-        random.random() * speed * 2 - speed
-    )
-
-
 
 
 
@@ -130,6 +132,9 @@ while pygame.get_init():
         
         elif event.type == pygame.KEYDOWN:
             pass
+
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            characters.append(Character(pygame.mouse.get_pos()))
 
     for c in characters:
         c.update(characters)
