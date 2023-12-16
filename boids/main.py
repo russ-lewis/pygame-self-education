@@ -24,17 +24,43 @@ class Character:
         return self.pos - self.prevPos
     
     def update(self, characters):
+
+
+        sep_weight = 300
+        ali_weight = 1
+        coh_weight = 1.4
+
+        sep_exponent = 1.1
+
+
+        acceleration = 0.5
+
+        drag_scale = 100
+        drag_exponent = 2
+
+
+
+
+
+
         vel = self.vel()
         vel = vel + self.acceleration
 
+        # drag force
         vm = np.linalg.norm(vel)
-        if vm > 0:
-            # if vm > 5:
-            #     vel /= vm
-            vel /= vm / 2
+        vu = vel / vm
+        vel -= vu * vm**drag_exponent / drag_scale
 
         self.prevPos = self.pos * 1
         self.pos += vel
+
+
+
+
+
+        
+
+
 
         
         if self.pos[0] < 0:
@@ -53,22 +79,24 @@ class Character:
             if c == self:
                 continue
 
-            disp = c.pos - self.pos
-            dist = np.linalg.norm(disp)
-            # dx = disp / dist
+            dx = c.pos - self.pos
+            dxm = np.linalg.norm(dx)
+            dxu = dx / dxm
 
             dv = c.vel() - self.vel()
+            dvm = np.linalg.norm(dv)
+            dvu = dv / dvm
 
 
             # separation
-            # if dist < 50:
-            self.acceleration -= disp * 10000 / dist ** 2
+            # if dm < 50:
+            self.acceleration -= dxu / dxm ** sep_exponent * sep_weight
 
             # alignment
-            self.acceleration += 4 * dv * 10000 / dist ** 2
+            self.acceleration += dvu * ali_weight
 
             # cohesion
-            self.acceleration += disp * 1
+            self.acceleration += dxu * coh_weight
 
         # # boundaries
         # if self.pos[0] < 100:
@@ -81,7 +109,8 @@ class Character:
         #     self.acceleration[1] -= 1000
 
         if self.acceleration.any():
-            self.acceleration /= np.linalg.norm(self.acceleration) / 0.1
+            self.acceleration /= np.linalg.norm(self.acceleration) / acceleration
+            print(np.linalg.norm(self.vel()))
 
     
     def draw(self, surface):
@@ -114,6 +143,9 @@ pygame.display.set_caption(__name__)
 CLOCK = pygame.time.Clock()
 
 
+# held_character = None
+
+
 while pygame.get_init():
     CLOCK.tick(60)
 
@@ -134,7 +166,16 @@ while pygame.get_init():
             pass
 
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            characters.append(Character(pygame.mouse.get_pos()))
+            # held_character = None
+        
+        # elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            held_character = Character(pygame.mouse.get_pos())
+            characters.append(held_character)
+
+    # if held_character:
+    #     held_character.pos *= 0
+    #     held_character.pos += pygame.mouse.get_pos()
+
 
     for c in characters:
         c.update(characters)
