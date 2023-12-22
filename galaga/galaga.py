@@ -64,6 +64,10 @@ class AsyncPygame:
             await self.sleep(1)
 
     def push_mode(self, new_mode):
+        TODO critical do not change the mode immediately, or pending events being dispatched by the for loop in the mode's dispatch_events() might get lost!
+
+        TODO maybe push_mode() should be a method of the Mode class???
+
         assert self.new_mode = new_mode
         self.new_mode = new_mode
 
