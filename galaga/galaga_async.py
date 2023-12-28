@@ -5,6 +5,8 @@ import asyncio
 import pygame
 import random
 
+from galaga_common import *
+
 
 
 class AsyncTicks:
@@ -64,78 +66,14 @@ class AsyncPygame:
             await self.sleep(1)
 
     def push_mode(self, new_mode):
-        TODO critical do not change the mode immediately, or pending events being dispatched by the for loop in the mode's dispatch_events() might get lost!
+        TODO    # critical do not change the mode immediately, or pending events being dispatched by the for loop in the mode's dispatch_events() might get lost!
 
-        TODO maybe push_mode() should be a method of the Mode class???
+        TODO    #  maybe push_mode() should be a method of the Mode class???
 
-        assert self.new_mode = new_mode
+        assert self.new_mode == new_mode
         self.new_mode = new_mode
 
 
-
-class AsyncPygame_Mode:
-    def __init__(self, game):
-        self.game     = game
-        self.has_quit = False
-
-    def dispatch_events(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.quit()
-            elif event.type == pygame.KEYDOWN:
-                self.key_down(event.key)
-            elif event.type == pygame.MOUSEMOTION:
-                self.mouse_motion(event.pos[0], event.pos[1])
-
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                self.mouse_button_down_left()
-            elif event.type == pygame.MOUSEBUTTONUP   and event.button == 1:
-                self.mouse_button_up_left()
-
-            elif event.type in [pygame.WINDOWSHOWN,
-                                pygame.WINDOWEXPOSED,
-                                pygame.WINDOWFOCUSGAINED, pygame.WINDOWFOCUSLOST,
-                                pygame.WINDOWTAKEFOCUS,
-                                pygame.WINDOWENTER, pygame.WINDOWLEAVE,
-                                pygame.WINDOWMOVED,
-                                pygame.VIDEOEXPOSE,
-                                pygame.ACTIVEEVENT]:
-                pass    # TODO: add handlers
-
-            else:
-                print(event)
-
-    def quit(self):
-        self.has_quit = True
-
-    def update(self):
-        pass
-
-    def key_down(self, key):
-        pass
-
-    def mouse_motion(self, x,y):
-        pass
-
-    def mouse_button_down_left(self):
-        pass
-
-    def mouse_button_up_left(self):
-        pass
-
-
-
-pygame.font.init()
-
-ms_font = pygame.font.SysFont("monospace", 36)
-
-
-
-SCREEN_WID = 800
-SCREEN_HEI = 600
-
-CLOCK_HZ   = 50
-CLOCK_TICK = 1 / CLOCK_HZ
 
 class Galaga(AsyncPygame):
     def __init__(self):
@@ -144,10 +82,10 @@ class Galaga(AsyncPygame):
 
 
 
-class Galaga_LoadingScreen(AsyncPygame_Mode):
+class Galaga_LoadingScreen(Galaga_ModeBase):
     def __init__(self, game):
         super(Galaga_LoadingScreen,self).__init__(game)
-        self.msg = ms_font.render("Click mouse to start game", False, "white")
+        self.msg = ms_font.render("Click mouse or hit ENTER to start game", False, "white")
 
 
     async def main(self):
@@ -170,20 +108,25 @@ class Galaga_LoadingScreen(AsyncPygame_Mode):
     def quit(self):
         self.mode_complete.set_result(None)
 
-    def key_down(self, key):
-        if key == pygame.K_ESCAPE:
-            self.quit()
-
-    def mouse_button_down_left(self):
+    def start_game(self):
         self.mode_complete.set_result( Galaga_LoadStage(self.game, 1) )
 
+    def key_down(self, key):
+        if key == pygame.K_ESCAPE or key == ord('q'):
+            self.quit()
+        if key == pygame.K_RETURN or key == pygame.K_KP_ENTER:
+            self.start_game()
+
+    def mouse_button_down_left(self):
+        self.start_game()
 
 
-class Galaga_LoadStage(AsyncPygame_Mode):
+
+class Galaga_LoadStage(Galaga_ModeBase):
     def __init__(self, game,stage_num):
         super(Galaga_LoadStage,self).__init__(game)
         self.stage_num = stage_num
-        self.msg       = ms_font.render("Stage 1 - Ready!", False, "white")
+        self.msg       = ms_font.render(f"Stage {stage_num} - Ready!", False, "white")
 
     async def main(self):
         await asyncio.sleep(2)
@@ -200,10 +143,24 @@ class Galaga_LoadStage(AsyncPygame_Mode):
         surf.blit(self.msg, (lft,top))
         pygame.display.flip()
 
-class Galaga_Stage(AsyncPygame_Mode):
+class Galaga_Stage(Galaga_ModeBase):
     def __init__(self, game,stage_num):
         super(Galaga_Stage,self).__init__(game)
         self.stage_num = stage_num
+
+        self.fighter_x = SCREEN_WID//2 - FIGHTER_WID//2
+
+        self.bullets = pygame.sprite.Group()
+        self.enemies = pygame.sprite.Group()
+
+        self.stars   = pygame.sprite.Group()
+        for i in range(100):
+            self.stars.add(Galaga_Star())
+
+        # the "script" tells you which enemies arrive on screen at what time,
+        # and what path they take.  It only handles the initial "assembly" of
+        # the enemies, it doesn't handle the dives that they perform later.
+        self.script = Galaga_Script(stage_num, self)
 
     async def main(self):
         await asyncio.sleep(2)
@@ -211,7 +168,12 @@ class Galaga_Stage(AsyncPygame_Mode):
         return None
 
     def draw(self, surf):
-        surf.fill("green")
+        surf.fill("black")
+
+        self.stars  .draw()
+        self.enemies.draw()
+        self.bullets.draw()
+
         pygame.display.flip()
 
     def key_down(self, key):
@@ -220,7 +182,7 @@ class Galaga_Stage(AsyncPygame_Mode):
 
 
 
-class Galaga_PauseMenu(AsyncPygame_Mode):
+class Galaga_PauseMenu(Galaga_ModeBase):
     def __init__(self, game):
         super(Galaga_PauseMenu,self).__init__(game)
 
