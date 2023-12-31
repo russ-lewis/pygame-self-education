@@ -39,12 +39,26 @@ def get_system_matrix(points, connections, fixed_points, forces_at_points):
     rows = len(points) * 2
     columns = len(connections)
 
-    v_external_forces = np.empty(rows)
-    m_system = np.empty((2, 3))
+    v_external_forces = np.zeros(rows)
+    m_system = np.zeros((rows, columns))
+
+    # todo external forces
+        # todo forces at points
+        # todo fixed point reaction forces
+    
+    # todo connections into matrix
 
     print(v_external_forces)
+    print()
     print(m_system)
 
+def get_system_inverse_matrix():
+    # return np. inverse 
+    pass
+
+
+get_system_matrix(points, connections, fixed_points, forces_at_points)
+input()
 
 
 
