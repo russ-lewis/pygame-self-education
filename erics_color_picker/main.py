@@ -144,7 +144,9 @@ def screen_untransform(v):
 cube_render_step_size = 15
 cube_render_step_offset = 0
 cube_viewport = pygame.Surface((scale * 2, scale * 2))
-def update_cube_viewport(pinned_color = (0, 0, 0), background_color=(100, 100, 100)):
+def update_cube_viewport(
+    pinned_color = (0, 0, 0), background_color=(100, 100, 100), force_pinned_color=True
+):
     global cube_render_step_offset
 
     i_offset = cube_render_step_offset % cube_render_step_size
@@ -185,14 +187,13 @@ def update_cube_viewport(pinned_color = (0, 0, 0), background_color=(100, 100, 1
                 # continue
                 r, g, b = background_color
             else:
-
-
-                if pinned_color[0]:
-                    r = pinned_color[0]
-                if pinned_color[1]:
-                    g = pinned_color[1]
-                if pinned_color[2]:
-                    b = pinned_color[2]
+                if force_pinned_color:
+                    if pinned_color[0]:
+                        r = pinned_color[0]
+                    if pinned_color[1]:
+                        g = pinned_color[1]
+                    if pinned_color[2]:
+                        b = pinned_color[2]
                 
             cube_viewport.set_at(ij, (r, g, b))
 
@@ -246,6 +247,7 @@ def draw_selected_color_lines(color, force_color=None):
 
 hovered_color = (0, 0, 0)
 pinned_color = (0, 0, 0)
+force_color = False
 
 while pygame.get_init():
     CLOCK.tick(60)
@@ -276,8 +278,9 @@ while pygame.get_init():
     # pygame.draw.circle(SCREEN, (r, g, b), screen_transform(rg_to_xy(r, g)), 3)
 
 
+    # pinned_color = 0, 0, 255
 
-    update_cube_viewport(pinned_color)
+    update_cube_viewport(pinned_color, force_pinned_color=force_color)
     cube_blit_area = pygame.Rect((center[0] - scale, center[1] - scale, scale * 2, scale * 2))
     SCREEN.blit(cube_viewport, cube_blit_area)
 
@@ -336,8 +339,8 @@ while pygame.get_init():
     
 
     if sum(hovered_color) > 0:
-        draw_selected_color_lines(pinned_color)
-        draw_selected_color_lines(hovered_color, "white")
+        draw_selected_color_lines(pinned_color, "white")
+        draw_selected_color_lines(hovered_color)
             
     pygame.draw.line(SCREEN, "red",
         screen_transform(rg_to_xy(0, 0)), screen_transform(rg_to_xy(255, 0))
@@ -368,12 +371,18 @@ while pygame.get_init():
         elif event.type == pygame.KEYDOWN:
             pass
 
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if pinned_color == (0, 0, 0):
+        # elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        #     if pinned_color == (0, 0, 0):
+        #         pinned_color = hovered_color
+        #     else:
+        #         pinned_color = (0, 0, 0)
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
                 pinned_color = hovered_color
-                # print(pinned_color)
-            else:
+            elif event.button == 3:
                 pinned_color = (0, 0, 0)
+            else:
+                force_color = not force_color
 
             # held_character = None
         
