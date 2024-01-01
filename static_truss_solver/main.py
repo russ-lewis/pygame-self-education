@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 
 import numpy as np
+np.set_printoptions(linewidth=1000)
 
 
 
@@ -47,14 +48,29 @@ def get_system_matrix(points, connections, fixed_points, forces_at_points):
         # todo fixed point reaction forces
     
     # todo connections into matrix
+    for i, c in enumerate(connections):
+        a, b = c
+        displacement = np.subtract(points[b], points[a])
+        assert len(displacement) == 2
+        magnitude = np.linalg.norm(displacement)
+        assert magnitude > 0
+        direction = displacement / magnitude
+
+        m_system[a*2][i] = direction[0]
+        m_system[a*2+1][i] = direction[1]
+        
+        m_system[b*2][i] = -direction[0]
+        m_system[b*2+1][i] = -direction[1]
+
+    # m_system[2][3] = 1
+
 
     print(v_external_forces)
     print()
     print(m_system)
 
 def get_system_inverse_matrix():
-    # return np. inverse 
-    pass
+    return np.linalg.inv(get_system_matrix())
 
 
 get_system_matrix(points, connections, fixed_points, forces_at_points)
