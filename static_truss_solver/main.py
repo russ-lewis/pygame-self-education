@@ -73,7 +73,7 @@ def get_system_inverse_matrix():
     return np.linalg.inv(get_system_matrix())
 
 
-get_system_matrix(points, connections, fixed_points, forces_at_points)
+print(get_system_matrix(points, connections, fixed_points, forces_at_points))
 input()
 
 
